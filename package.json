@@ -1,7 +1,7 @@
 {
-  "name": "@ts_modules_for_gas/spreadsheettable",
+  "name": "@ts-modules-for-gas/gas-table",
   "version": "0.0.1",
-  "description": "Type Script Modules for Google Apps Script that provides CRUD operation to Google Spreadsheet",
+  "description": "Type Script Modules for Google Apps Script that provides CRUD operation",
   "main": "index.js",
   "directories": {
     "test": "test"
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/awa2/SpreadsheetTable.git"
+    "url": "git+https://github.com/awa2/GAS-Table.git"
   },
   "keywords": [
     "GoogleAppsScript"
@@ -19,7 +19,11 @@
   "author": "awa2 <takanori.awatsu+npm@gmail.com> (Takanori Awatsu)",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/awa2/SpreadsheetTable/issues"
+    "url": "https://github.com/awa2/GAS-Table/issues"
   },
-  "homepage": "https://github.com/awa2/SpreadsheetTable#readme"
+  "homepage": "https://github.com/awa2/GAS-Table#readme",
+  "dependencies": {
+    "@types/google-apps-script": "0.0.34"
+  },
+  "devDependencies": {}
 }

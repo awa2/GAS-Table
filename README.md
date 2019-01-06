@@ -1,4 +1,4 @@
-## SpreadsheetTable
+## GAS-Table
 Table module provides CRUD like interface and JSON based data handling with Google Spreadsheet.
 
 ### Example
