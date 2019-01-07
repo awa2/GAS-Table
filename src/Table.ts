@@ -3,7 +3,6 @@ export interface Data {
   _index: number;
 };
 
-// ActiveRecord::Base
 export default class Table {
   public gid: number;
   public name: string;
