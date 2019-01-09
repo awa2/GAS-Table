@@ -2,7 +2,7 @@
   "name": "gas-table",
   "version": "0.0.1",
   "description": "Type Script Modules for Google Apps Script that provides CRUD operation",
-  "main": "index.js",
+  "main": "./src/Table.ts",
   "directories": {
     "test": "test"
   },
