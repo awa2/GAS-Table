@@ -1,5 +1,5 @@
 {
-  "name": "gas-table",
+  "name": "@ts-module-for-gas/gas-table",
   "version": "0.0.2",
   "description": "Type Script Modules for Google Apps Script that provides CRUD operation",
   "main": "./src/Table.ts",
