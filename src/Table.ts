@@ -4,6 +4,7 @@ export interface Data {
 };
 
 export default class Table {
+  public id: string;
   public gid: number;
   public name: string;
 
@@ -11,8 +12,9 @@ export default class Table {
   private Sheet: GoogleAppsScript.Spreadsheet.Sheet;
   private Headers: Array<string>;
 
-  constructor(spreadsheetId: String, gid: number) {
+  constructor(spreadsheetId: string, gid: number) {
     try {
+      this.id = spreadsheetId;
       this.gid = gid;
 
       this.Spreadsheet = SpreadsheetApp.openById(spreadsheetId as string);
@@ -65,25 +67,18 @@ export default class Table {
   public updateAll(dataArray: Data[]) {
     const Records: Array<any> = [];
     if (this.Headers.length) {
-      // Header defined
-      // Records.push(this.Headers);
       dataArray.forEach((data) => {
-        const record: any[] = [];
-        this.Headers.forEach(header => {
-          switch (header) {
-            case 'created_at': record.push(data['created_at']); break;
-            case 'updated_at': record.push(new Date()); break;
-            default: record.push(data[header]); break;
-          }
-        });
+        const record = this.map_to_record(data);
         Records.push(record);
       });
       this.Sheet.getRange(2, 1, Records.length, this.Headers.length).setValues(Records);
+      return this;
     } else {
-      // throw `Table ${this.gid} is not defined, you need 'Dataset.create'`;
       return false;
     }
-    return this;
+  }
+  public bulk_insert(dataArray: Data[]) {
+    return this.updateAll(dataArray);
   }
 
   public deleteAll() {
@@ -126,41 +121,23 @@ export default class Table {
   public update(data: Object, index?: number): Table
   public update(data: Data, index?: number): Table
   public update(data: any, index?: number) {
-    if(Object.keys(data).length){ return this; }
+    if (!Object.keys(data).length) { return this; }
     if (this.Headers.length) {
       let row: number;
       if (index) {
         row = index + 2;
+        data._index = index;
       } else {
         if (data.hasOwnProperty('_index')) {
           row = data._index as number + 2;
         } else {
           row = this.Sheet.getDataRange().getValues().length + 1;
+          data._index = row - 2;
         }
       }
-      const oldData = this.get(row);
+      const record = this.map_to_record(data);
+      this.Sheet.getRange(row, 1, 1, record.length).setValues([record]);
 
-      if (Array.isArray(data)) {
-        // this.Sheet.insertRows(row);
-        // this.Sheet.getRange(row, 1, 1, data.length).setValues([data]);
-      } else {
-        const record: Object[] = [];
-        this.Headers.forEach((header, i) => {
-          switch (header) {
-            case 'created_at':
-              if (index) { record.push(data[header]); } else { record.push(new Date()); };
-              break;
-            case 'updated_at': record.push(new Date()); break;
-            default:
-              if (data[header] === undefined) {
-                record.push(oldData[header]);
-              } else {
-                record.push(data[header])
-              }; break;
-          }
-        });
-        this.Sheet.getRange(row, 1, 1, record.length).setValues([record]);
-      }
       return this;
     } else {
       throw "header is not defined";
@@ -189,6 +166,58 @@ export default class Table {
   public getLast() {
     const lastIndex = this.Sheet.getDataRange().getNumRows() - 2;
     return this.get(lastIndex);
+  }
+
+  private map_to_record(newData: Data) {
+    const index = newData._index;
+    const oldData = this.get(index);
+    return this.Headers.map((header, i) => {
+      switch (header) {
+        case 'created_at':
+          if (oldData.created_at) {
+            return new Date(oldData.created_at as string).toISOString();
+          } else {
+            return new Date().toISOString();
+          }
+          break;
+        case 'updated_at':
+          return new Date().toISOString();
+          break;
+        case 'lock_version':
+          return md5sum(newData);
+          break;
+        default:
+          if (newData[header] === undefined) {
+            // Merging record (Partial update)
+            return oldData[header];
+          } else {
+            switch (this.getType(newData[header])) {
+              case 'date':
+                return (newData[header] as Date).toISOString();
+                break;
+              default:
+                return newData[header];
+            }
+          };
+          break;
+      }
+    });
+  }
+
+  private map_to_data(record: Object[]){
+    record.map( value => {
+      if(typeof value === 'string'){
+        if(value.match(/^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)$/)){
+          return new Date(value);
+        }
+      } else {
+        return value;
+      }
+    })
+  }
+
+  private getType(obj: any) {
+    return Object.prototype.toString.call(obj).toLowerCase().slice(8, -1);
   }
 
   public static copyAllTo(srcTable: Table, dstTable: Table) {
@@ -280,4 +309,48 @@ export default class Table {
     }
     return bln;
   }
+
+  public static createTable(name: string, headers: string[]) {
+    const Spreadsheet = SpreadsheetApp.create(name);
+    const sid = Spreadsheet.getId();
+    const Sheet = Spreadsheet.getSheets()[0];
+    const gid = Sheet.setName(name).getSheetId();
+    Sheet.deleteColumns(3, Sheet.getMaxColumns() - 3);
+    Sheet.deleteRows(1, Sheet.getMaxRows() - 1);
+    Sheet.getRange(1, 1, 1, headers.length + 3).setValues([['created_at', 'updated_at', 'lock_version'].concat(headers)]).setFontWeight("bold");
+    Sheet.getRange(1, 1, 1, 3).setFontColor("red");
+    Sheet.autoResizeColumns(1, Sheet.getMaxColumns());
+    return new Table(sid, gid);
+  }
+  // public static initialize(sid: string, gid: number) {
+  //   const Spreadsheet = SpreadsheetApp.openById(sid);
+  //   const Sheet = Spreadsheet.getSheets().reduce((prev, cur) => {
+  //     return prev.getSheetId() === gid ? prev : cur;
+  //   })
+  // }
+
+  public static migrate(table: Table, new_headers: string[]) {
+    const Spreadsheet = SpreadsheetApp.openById(table.id);
+    const Sheet = Spreadsheet.getSheetByName(table.name);
+    const headers = Sheet.getDataRange().getValues()[0];
+    new_headers.forEach(new_header => {
+      if (headers.some(header => { return new_header === header })) {
+      } else {
+        headers.push(new_header);
+      }
+    });
+    Sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    Sheet.getRange(1, 1, 1, 3).setFontColor("red");
+    Sheet.autoResizeColumns(1, Sheet.getMaxColumns());
+    return new Table(table.id, table.gid);
+  }
+}
+
+function md5sum(data: any) {
+  const hash = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, JSON.stringify(data), Utilities.Charset.UTF_8);
+  return hash.map(h => {
+    if (h < 0) { h += 256; }
+    const t = h.toString(16)
+    return t.length === 1 ? '0' + t : t;
+  }).join('');
 }
