@@ -1,4 +1,17 @@
+# Node modules
 node_modules/
-**/node_modules/
+
+# TypeScript Config
+# tsconfig.json
+# tslint.json
+
+# Google Apps Script Config
 **/.clasp.json
+**/appsscript.json
+**/.claspignore
+
+# test code
+test/remote/
+
+# DS_store
 **/.DS_Store
