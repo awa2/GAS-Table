@@ -50,10 +50,7 @@ export default class Table {
       if (index == 0) {
         return obj;
       } else {
-        record.forEach((val, i) => {
-          obj[this.Headers[i]] = val;
-        })
-        return obj;
+        return this.map_to_data(record, obj);
       }
     }).slice(1);
   }
@@ -99,12 +96,8 @@ export default class Table {
   public get(index: number): Data {
     if (this.Headers.length) {
       const obj: Data = { _index: index };
-      this.Sheet.getRange(index + 2, 1, 1, this.Headers.length).getValues().map((record) => {
-        record.forEach((val, i) => {
-          obj[this.Headers[i]] = val;
-        })
-      });
-      return obj;
+      const record = this.Sheet.getRange(index + 2, 1, 1, this.Headers.length).getValues()[0];
+      return this.map_to_data(record, obj);
     } else {
       throw "header is not defined";
     }
@@ -204,16 +197,17 @@ export default class Table {
     });
   }
 
-  private map_to_data(record: Object[]){
-    record.map( value => {
-      if(typeof value === 'string'){
-        if(value.match(/^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)$/)){
-          return new Date(value);
+  private map_to_data(record: Object[], obj: Data) {
+    record.forEach((value, i) => {
+      if (typeof value === 'string') {
+        if (value.match(/^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)$/)) {
+          obj[this.Headers[i]] = new Date(value);
         }
       } else {
-        return value;
+        obj[this.Headers[i]] = value;
       }
     })
+    return obj;
   }
 
   private getType(obj: any) {
@@ -310,14 +304,14 @@ export default class Table {
     return bln;
   }
 
-  public static createTable(name: string, schema: string[]|Object) {
+  public static createTable(name: string, schema: string[] | Object) {
     const Spreadsheet = SpreadsheetApp.create(name);
     const sid = Spreadsheet.getId();
     const Sheet = Spreadsheet.getSheets()[0];
     const gid = Sheet.setName(name).getSheetId();
     Sheet.deleteColumns(3, Sheet.getMaxColumns() - 3);
     Sheet.deleteRows(1, Sheet.getMaxRows() - 1);
-    if(Array.isArray(schema)){
+    if (Array.isArray(schema)) {
       Sheet.getRange(1, 1, 1, schema.length + 3).setValues([['created_at', 'updated_at', 'lock_version'].concat(schema)]).setFontWeight("bold");
     } else {
       const headers = [];
@@ -333,12 +327,12 @@ export default class Table {
     return new Table(sid, gid);
   }
 
-  public static migrate(table: Table, schema?: string[]|Object) {
+  public static migrate(table: Table, schema?: string[] | Object) {
     const Spreadsheet = SpreadsheetApp.openById(table.id);
     const Sheet = Spreadsheet.getSheetByName(table.name);
     const headers = Sheet.getDataRange().getValues()[0];
-    if(schema){
-      if(Array.isArray(schema)){
+    if (schema) {
+      if (Array.isArray(schema)) {
         schema.forEach(new_header => {
           if (headers.some(header => { return new_header === header })) {
           } else {
