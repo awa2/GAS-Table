@@ -184,7 +184,7 @@ export default class Table {
           return new Date().toISOString();
           break;
         case 'lock_version':
-          return md5sum(newData);
+          return Table.md5sum(newData);
           break;
         default:
           if (newData[header] === undefined) {
@@ -371,13 +371,13 @@ export default class Table {
     Sheet.autoResizeColumns(1, Sheet.getMaxColumns());
     return new Table(table.id, table.gid);
   }
-}
 
-function md5sum(data: any) {
-  const hash = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, JSON.stringify(data), Utilities.Charset.UTF_8);
-  return hash.map(h => {
-    if (h < 0) { h += 256; }
-    const t = h.toString(16)
-    return t.length === 1 ? '0' + t : t;
-  }).join('');
+  public static md5sum(data: any) {
+    const hash = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, JSON.stringify(data), Utilities.Charset.UTF_8);
+    return hash.map(h => {
+      if (h < 0) { h += 256; }
+      const t = h.toString(16)
+      return t.length === 1 ? '0' + t : t;
+    }).join('');
+  }
 }
