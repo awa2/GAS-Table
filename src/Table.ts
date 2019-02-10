@@ -184,7 +184,7 @@ export default class Table {
             // Merging record (Partial update)
             return oldData[header];
           } else {
-            switch (this.getType(newData[header])) {
+            switch (Table.getType(newData[header])) {
               case 'date':
                 return (newData[header] as Date).toISOString();
                 break;
@@ -210,7 +210,7 @@ export default class Table {
     return obj;
   }
 
-  private getType(obj: any) {
+  private static getType(obj: any) {
     return Object.prototype.toString.call(obj).toLowerCase().slice(8, -1);
   }
 
@@ -277,7 +277,7 @@ export default class Table {
 
     if (only) {
       // just only specific key comparing
-      switch (Object.prototype.toString.call(a[only]).slice(8, -1).toLowerCase()) {
+      switch (Table.getType(a[only])) {
         case 'number': bln = bln && (a[only] === b[only]); break;
         case 'string': bln = bln && (a[only] === b[only]); break;
         case 'boolean': bln = bln && (a[only] === b[only]); break;
@@ -290,7 +290,7 @@ export default class Table {
           if (without === key) {
             // Not comparing
           } else {
-            switch (Object.prototype.toString.call(a[key]).slice(8, -1).toLowerCase()) {
+            switch (Table.getType(a[key])) {
               case 'number': bln = bln && (a[key] === b[key]); break;
               case 'string': bln = bln && (a[key] === b[key]); break;
               case 'boolean': bln = bln && (a[key] === b[key]); break;
