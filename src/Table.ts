@@ -310,35 +310,62 @@ export default class Table {
     return bln;
   }
 
-  public static createTable(name: string, headers: string[]) {
+  public static createTable(name: string, schema: string[]|Object) {
     const Spreadsheet = SpreadsheetApp.create(name);
     const sid = Spreadsheet.getId();
     const Sheet = Spreadsheet.getSheets()[0];
     const gid = Sheet.setName(name).getSheetId();
     Sheet.deleteColumns(3, Sheet.getMaxColumns() - 3);
     Sheet.deleteRows(1, Sheet.getMaxRows() - 1);
-    Sheet.getRange(1, 1, 1, headers.length + 3).setValues([['created_at', 'updated_at', 'lock_version'].concat(headers)]).setFontWeight("bold");
+    if(Array.isArray(schema)){
+      Sheet.getRange(1, 1, 1, schema.length + 3).setValues([['created_at', 'updated_at', 'lock_version'].concat(schema)]).setFontWeight("bold");
+    } else {
+      const headers = [];
+      for (const key in schema) {
+        if (schema.hasOwnProperty(key)) {
+          headers.push(key);
+        }
+      }
+      Sheet.getRange(1, 1, 1, headers.length + 3).setValues([['created_at', 'updated_at', 'lock_version'].concat(headers)]).setFontWeight("bold");
+    }
     Sheet.getRange(1, 1, 1, 3).setFontColor("red");
     Sheet.autoResizeColumns(1, Sheet.getMaxColumns());
     return new Table(sid, gid);
   }
-  // public static initialize(sid: string, gid: number) {
-  //   const Spreadsheet = SpreadsheetApp.openById(sid);
-  //   const Sheet = Spreadsheet.getSheets().reduce((prev, cur) => {
-  //     return prev.getSheetId() === gid ? prev : cur;
-  //   })
-  // }
 
-  public static migrate(table: Table, new_headers: string[]) {
+  public static migrate(table: Table, schema?: string[]|Object) {
     const Spreadsheet = SpreadsheetApp.openById(table.id);
     const Sheet = Spreadsheet.getSheetByName(table.name);
     const headers = Sheet.getDataRange().getValues()[0];
-    new_headers.forEach(new_header => {
-      if (headers.some(header => { return new_header === header })) {
+    if(schema){
+      if(Array.isArray(schema)){
+        schema.forEach(new_header => {
+          if (headers.some(header => { return new_header === header })) {
+          } else {
+            headers.push(new_header);
+          }
+        });
       } else {
-        headers.push(new_header);
+        for (const new_header in schema) {
+          if (schema.hasOwnProperty(new_header)) {
+            if (headers.some(header => { return new_header === header })) {
+            } else {
+              headers.push(new_header);
+            }
+          }
+        }
       }
-    });
+    } else {
+      for (const new_header in table) {
+        if (table.hasOwnProperty(new_header)) {
+          if (headers.some(header => { return new_header === header })) {
+          } else {
+            headers.push(new_header);
+          }
+        }
+      }
+
+    }
     Sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     Sheet.getRange(1, 1, 1, 3).setFontColor("red");
     Sheet.autoResizeColumns(1, Sheet.getMaxColumns());
