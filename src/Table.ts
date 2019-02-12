@@ -62,7 +62,6 @@ export default class Table {
   public getAllAsArray() { return this.getValues(); }
 
   public updateAll(dataArray: Data[]) {
-    // const Records: Array<any> = [];
     if (this.Headers.length) {
       const Records = dataArray.map((data,i) => {
         data._index = i;
