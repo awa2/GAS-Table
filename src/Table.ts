@@ -323,7 +323,6 @@ export default class Table {
       }
       Sheet.getRange(1, 1, 1, headers.length + 3).setValues([['created_at', 'updated_at', 'lock_version'].concat(headers)]).setFontWeight("bold");
     }
-    Sheet.getRange(1, 1, 1, 3).setFontColor("red");
     Sheet.autoResizeColumns(1, Sheet.getMaxColumns());
     return new Table(sid, gid);
   }
@@ -362,7 +361,6 @@ export default class Table {
 
     }
     Sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-    Sheet.getRange(1, 1, 1, 3).setFontColor("red");
     Sheet.autoResizeColumns(1, Sheet.getMaxColumns());
     return new Table(table.id, table.gid);
   }
