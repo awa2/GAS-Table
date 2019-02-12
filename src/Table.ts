@@ -62,11 +62,11 @@ export default class Table {
   public getAllAsArray() { return this.getValues(); }
 
   public updateAll(dataArray: Data[]) {
-    const Records: Array<any> = [];
+    // const Records: Array<any> = [];
     if (this.Headers.length) {
-      dataArray.forEach((data) => {
-        const record = this.map_to_record(data);
-        Records.push(record);
+      const Records = dataArray.map((data,i) => {
+        data._index = i;
+        return this.map_to_record(data);
       });
       this.Sheet.getRange(2, 1, Records.length, this.Headers.length).setValues(Records);
       return this;
