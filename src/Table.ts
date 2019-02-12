@@ -202,6 +202,8 @@ export default class Table {
       if (typeof value === 'string') {
         if (value.match(/^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)$/)) {
           obj[this.Headers[i]] = new Date(value);
+        } else {
+          obj[this.Headers[i]] = value;
         }
       } else {
         obj[this.Headers[i]] = value;
