@@ -39,6 +39,7 @@ export default class Table {
       throw `Can not connect ${spreadsheetId}#${gid}`;
     }
   }
+  public getSheet() { return this.Sheet };
 
   public addAll(dataArray: Data[]) {
     return this.deleteAll().updateAll(dataArray);
@@ -63,7 +64,7 @@ export default class Table {
 
   public updateAll(dataArray: Data[]) {
     if (this.Headers.length) {
-      const Records = dataArray.map((data,i) => {
+      const Records = dataArray.map((data, i) => {
         data._index = i;
         return this.map_to_record(data);
       });
@@ -305,15 +306,27 @@ export default class Table {
     return bln;
   }
 
+  public static init(table: Table, really?: boolean) {
+    if (really) {
+      const Sheet = table.getSheet();
+      Sheet.deleteColumns(1, Sheet.getMaxColumns() - 1);
+      Sheet.deleteRows(1, Sheet.getMaxRows() - 1);
+      Sheet.getRange(1, 1, 1, table.Headers.length).setValues([table.Headers]);
+      Sheet.autoResizeColumns(1, Sheet.getMaxColumns());
+      return new Table(table.id, table.gid);
+    } else {
+      throw 'Error : init() required "really" option!';
+    }
+  }
+
   public static createTable(name: string, schema: string[] | Object) {
     const Spreadsheet = SpreadsheetApp.create(name);
     const sid = Spreadsheet.getId();
     const Sheet = Spreadsheet.getSheets()[0];
     const gid = Sheet.setName(name).getSheetId();
-    Sheet.deleteColumns(3, Sheet.getMaxColumns() - 3);
-    Sheet.deleteRows(1, Sheet.getMaxRows() - 1);
+    const table = new Table(sid, gid);
     if (Array.isArray(schema)) {
-      Sheet.getRange(1, 1, 1, schema.length + 3).setValues([['created_at', 'updated_at', 'lock_version'].concat(schema)]).setFontWeight("bold");
+      table.Headers = ['created_at', 'updated_at', 'lock_version'].concat(schema);
     } else {
       const headers = [];
       for (const key in schema) {
@@ -321,18 +334,18 @@ export default class Table {
           headers.push(key);
         }
       }
-      Sheet.getRange(1, 1, 1, headers.length + 3).setValues([['created_at', 'updated_at', 'lock_version'].concat(headers)]).setFontWeight("bold");
+      table.Headers = ['created_at', 'updated_at', 'lock_version'].concat(headers);
     }
-    Sheet.autoResizeColumns(1, Sheet.getMaxColumns());
-    return new Table(sid, gid);
+    return Table.init(table, true);
   }
 
-  public static migrate(table: Table, schema?: string[] | Object) {
+  public static migrate(table: Table, schema: string[] | Object) {
     const Spreadsheet = SpreadsheetApp.openById(table.id);
     const Sheet = Spreadsheet.getSheetByName(table.name);
     const headers = Sheet.getDataRange().getValues()[0];
     if (schema) {
       if (Array.isArray(schema)) {
+        // Schema defined as Array;
         schema.forEach(new_header => {
           if (headers.some(header => { return new_header === header })) {
           } else {
@@ -340,6 +353,7 @@ export default class Table {
           }
         });
       } else {
+        // Schema defined as Object or Class
         for (const new_header in schema) {
           if (schema.hasOwnProperty(new_header)) {
             if (headers.some(header => { return new_header === header })) {
@@ -350,14 +364,14 @@ export default class Table {
         }
       }
     } else {
-      for (const new_header in table) {
-        if (table.hasOwnProperty(new_header)) {
-          if (headers.some(header => { return new_header === header })) {
-          } else {
-            headers.push(new_header);
-          }
-        }
-      }
+      // for (const new_header in table) {
+      //   if (table.hasOwnProperty(new_header)) {
+      //     if (headers.some(header => { return new_header === header })) {
+      //     } else {
+      //       headers.push(new_header);
+      //     }
+      //   }
+      // }
 
     }
     Sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
