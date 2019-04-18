@@ -306,7 +306,7 @@ export default class Table {
     return bln;
   }
 
-  public static init(table: Table, really?: boolean) {
+  public static reset(table: Table, really?: boolean) {
     if (really) {
       const Sheet = table.getSheet();
       Sheet.deleteColumns(1, Sheet.getMaxColumns() - 1);
@@ -318,13 +318,8 @@ export default class Table {
       throw 'Error : init() required "really" option!';
     }
   }
-
-  public static createTable(name: string, schema: string[] | Object) {
-    const Spreadsheet = SpreadsheetApp.create(name);
-    const sid = Spreadsheet.getId();
-    const Sheet = Spreadsheet.getSheets()[0];
-    const gid = Sheet.setName(name).getSheetId();
-    const table = new Table(sid, gid);
+  public static init(SpreadsheetId: string, GridId: number, schema: string[] | Object) {
+    const table = new Table(SpreadsheetId, GridId);
     if (Array.isArray(schema)) {
       table.Headers = ['created_at', 'updated_at', 'lock_version'].concat(schema);
     } else {
@@ -336,7 +331,16 @@ export default class Table {
       }
       table.Headers = ['created_at', 'updated_at', 'lock_version'].concat(headers);
     }
-    return Table.init(table, true);
+    return Table.reset(table, true);
+  }
+
+  public static createTable(name: string, schema: string[] | Object) {
+    const Spreadsheet = SpreadsheetApp.create(name);
+    const sid = Spreadsheet.getId();
+    const Sheet = Spreadsheet.getSheets()[0];
+    const gid = Sheet.setName(name).getSheetId();
+    const table = new Table(sid, gid);
+    return Table.init(sid, gid, schema);
   }
 
   public static migrate(table: Table, schema: string[] | Object) {
