@@ -111,8 +111,8 @@ export default class Table {
     }
   }
 
-  public update(data: Object, index?: number): Table
-  public update(data: Data, index?: number): Table
+  public update(data: Object, index?: number): Data
+  public update(data: Data, index?: number): Data
   public update(data: any, index?: number) {
     if (!Object.keys(data).length) { return this; }
     if (this.Headers.length) {
@@ -131,7 +131,7 @@ export default class Table {
       const record = this.map_to_record(data);
       this.Sheet.getRange(row, 1, 1, record.length).setValues([record]);
 
-      return this;
+      return this.get(row - 2)
     } else {
       throw "header is not defined";
     }
