@@ -121,7 +121,7 @@ export default class Table {
         row = index + 2;
         data._index = index;
       } else {
-        if (data.hasOwnProperty('_index')) {
+        if (data.hasOwnProperty('_index') && (data.index >= 0)) {
           row = data._index as number + 2;
         } else {
           row = this.Sheet.getDataRange().getValues().length + 1;
